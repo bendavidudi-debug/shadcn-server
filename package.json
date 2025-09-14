@@ -1,0 +1,16 @@
+{
+  "name": "duel-time-server",
+  "version": "1.0.0",
+  "description": "WebSocket server for Duel Time multiplayer game",
+  "main": "websocket-server.js",
+  "scripts": {
+    "start": "node websocket-server.js",
+    "dev": "node websocket-server.js"
+  },
+  "dependencies": {
+    "ws": "^8.14.2"
+  },
+  "keywords": ["websocket", "game", "multiplayer"],
+  "author": "MGX",
+  "license": "MIT"
+}
