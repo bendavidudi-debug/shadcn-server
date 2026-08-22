@@ -6,6 +6,11 @@ on:
     paths:
       - 'btc_audit/**'
       - '.github/workflows/btc-chain-audit.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'btc_audit/**'
+      - '.github/workflows/btc-chain-audit.yml'
   workflow_dispatch:
 
 jobs:
