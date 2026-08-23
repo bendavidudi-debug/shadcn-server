@@ -5,30 +5,46 @@ on:
       - 'btc_forensic/addresses.json'
       - 'btc_forensic/pull_shard.py'
       - '.github/workflows/btc-forensic-pull.yml'
-  pull_request:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   pull:
     runs-on: ubuntu-latest
     timeout-minutes: 120
-    strategy:
-      fail-fast: false
-      max-parallel: 16
-      matrix:
-        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
-    env:
-      SHARD_INDEX: ${{ matrix.shard }}
-      SHARD_COUNT: 16
     steps:
       - uses: actions/checkout@v4
-      - name: Fresh blockchain pull shard
-        run: python3 btc_forensic/pull_shard.py
+        with:
+          ref: main
+      - name: Fresh blockchain pull — 16 parallel workers
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf btc_forensic/out
+          mkdir -p btc_forensic/out
+          pids=()
+          for i in $(seq 0 15); do
+            echo "starting shard $i"
+            SHARD_INDEX=$i SHARD_COUNT=16 python3 btc_forensic/pull_shard.py > "btc_forensic/shard_${i}.log" 2>&1 &
+            pids+=("$!")
+          done
+          for pid in "${pids[@]}"; do
+            wait "$pid"
+          done
+          echo "all shards finished"
+          cat btc_forensic/shard_*.log
+      - name: Commit fresh outputs
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add btc_forensic/out/
+          git commit -m "Fresh BTC blockchain pull outputs" || exit 0
+          git push origin HEAD:main
       - uses: actions/upload-artifact@v4
         with:
-          name: btc-forensic-shard-${{ matrix.shard }}
-          path: btc_forensic/out/shard_*/
+          name: btc-forensic-all-shards
+          path: btc_forensic/out/
           retention-days: 7
