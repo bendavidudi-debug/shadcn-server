@@ -1,0 +1,20 @@
+name: BTC forensic fresh pull
+on:
+  push:
+    paths:
+      - 'btc_forensic/**'
+      - '.github/workflows/btc-forensic-pull.yml'
+  workflow_dispatch:
+jobs:
+  pull:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fresh blockchain pull
+        run: python3 btc_forensic/pull.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: btc-forensic-output
+          path: btc_forensic/out/
+          retention-days: 7
