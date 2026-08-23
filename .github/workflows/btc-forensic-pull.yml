@@ -5,11 +5,14 @@ on:
       - 'btc_forensic/addresses.json'
       - 'btc_forensic/pull.py'
       - '.github/workflows/btc-forensic-pull.yml'
+  issues:
+    types: [opened]
   workflow_dispatch:
 permissions:
   contents: write
 jobs:
   pull:
+    if: github.event_name != 'issues' || github.event.issue.title == 'TRIGGER BTC FORENSIC PULL'
     runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:
