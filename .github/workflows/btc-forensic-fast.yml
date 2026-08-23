@@ -1,0 +1,46 @@
+name: BTC forensic fast parallel
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fast-pull:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Mark fast run started
+        shell: bash
+        run: |
+          date -u +'%Y-%m-%dT%H:%M:%SZ' > btc_forensic/FAST_RUN_STARTED.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add btc_forensic/FAST_RUN_STARTED.txt
+          git commit -m "BTC fast forensic pull started" || true
+          git pull --rebase origin main
+          git push origin HEAD:main
+      - name: Pull 227 addresses with 16 workers
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf btc_forensic/out_fast
+          mkdir -p btc_forensic/out_fast
+          pids=()
+          for i in $(seq 0 15); do
+            SHARD_INDEX=$i SHARD_COUNT=16 python3 btc_forensic/pull_shard.py > "btc_forensic/fast_${i}.log" 2>&1 &
+            pids+=("$!")
+          done
+          for pid in "${pids[@]}"; do wait "$pid"; done
+          mkdir -p btc_forensic/out_fast
+          cp -R btc_forensic/out/shard_* btc_forensic/out_fast/
+          cat btc_forensic/fast_*.log
+      - uses: actions/upload-artifact@v4
+        with:
+          name: btc-forensic-fast-output
+          path: btc_forensic/out_fast/
+          retention-days: 7
