@@ -2,9 +2,12 @@ name: BTC forensic fresh pull
 on:
   push:
     paths:
-      - 'btc_forensic/**'
+      - 'btc_forensic/addresses.json'
+      - 'btc_forensic/pull.py'
       - '.github/workflows/btc-forensic-pull.yml'
   workflow_dispatch:
+permissions:
+  contents: write
 jobs:
   pull:
     runs-on: ubuntu-latest
@@ -13,6 +16,13 @@ jobs:
       - uses: actions/checkout@v4
       - name: Fresh blockchain pull
         run: python3 btc_forensic/pull.py
+      - name: Commit outputs
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add btc_forensic/out/
+          git commit -m "Update fresh BTC forensic outputs" || exit 0
+          git push
       - uses: actions/upload-artifact@v4
         with:
           name: btc-forensic-output
