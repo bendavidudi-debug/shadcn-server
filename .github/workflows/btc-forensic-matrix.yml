@@ -1,0 +1,65 @@
+name: BTC forensic checkpointed matrix
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PYTHONUNBUFFERED: "1"
+
+jobs:
+  pull:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix:
+        shard: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Pull shard with per-address checkpoints
+        timeout-minutes: 22
+        continue-on-error: true
+        env:
+          SHARD_INDEX: ${{ matrix.shard }}
+          SHARD_COUNT: 64
+        run: python3 btc_forensic/pull_matrix_shard.py
+      - name: Upload shard checkpoint
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: btc-matrix-shard-${{ matrix.shard }}
+          path: btc_forensic/matrix_out/shard_*/
+          retention-days: 7
+          if-no-files-found: warn
+
+  merge:
+    needs: pull
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Download all shard checkpoints
+        uses: actions/download-artifact@v4
+        with:
+          pattern: btc-matrix-shard-*
+          path: btc_forensic/matrix_aggregate
+          merge-multiple: true
+      - name: Merge and verify coverage
+        run: python3 btc_forensic/merge_matrix.py btc_forensic/matrix_aggregate btc_forensic/matrix_merged
+      - name: Upload one merged forensic artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: btc-forensic-matrix-merged
+          path: btc_forensic/matrix_merged/
+          retention-days: 7
