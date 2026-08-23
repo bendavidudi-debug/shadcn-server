@@ -5,6 +5,7 @@ on:
       - 'btc_forensic/addresses.json'
       - 'btc_forensic/pull_shard.py'
       - '.github/workflows/btc-forensic-pull.yml'
+  pull_request:
   workflow_dispatch:
 
 permissions:
