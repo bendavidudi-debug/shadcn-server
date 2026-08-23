@@ -1,0 +1,27 @@
+name: Chainabuse 2020 all-address scan
+
+on:
+  pull_request:
+    paths:
+      - 'btc_forensic/chainabuse_2020_trigger.txt'
+  workflow_dispatch:
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Install requests
+        run: python3 -m pip install requests
+      - name: Scan June-December 2020 Chainabuse reports
+        run: python3 btc_forensic/chainabuse_2020_scan.py
+      - name: Upload 2020 Chainabuse results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: chainabuse-2020-all-candidates
+          path: btc_forensic/chainabuse_2020_out/
+          retention-days: 7
