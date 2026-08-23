@@ -4,32 +4,32 @@ on:
     paths:
       - 'btc_forensic/addresses.json'
       - 'btc_forensic/pull.py'
+      - 'btc_forensic/pull_shard.py'
       - '.github/workflows/btc-forensic-pull.yml'
   pull_request:
-  issues:
-    types: [opened]
   workflow_dispatch:
+
 permissions:
-  contents: write
+  contents: read
+
 jobs:
   pull:
-    if: github.event_name != 'issues' || github.event.issue.title == 'TRIGGER BTC FORENSIC PULL'
     runs-on: ubuntu-latest
     timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      max-parallel: 16
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    env:
+      SHARD_INDEX: ${{ matrix.shard }}
+      SHARD_COUNT: 16
     steps:
       - uses: actions/checkout@v4
-      - name: Fresh blockchain pull
-        run: python3 btc_forensic/pull.py
-      - name: Commit outputs
-        if: github.event_name != 'pull_request'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add btc_forensic/out/
-          git commit -m "Update fresh BTC forensic outputs" || exit 0
-          git push
+      - name: Fresh blockchain pull shard
+        run: python3 btc_forensic/pull_shard.py
       - uses: actions/upload-artifact@v4
         with:
-          name: btc-forensic-output
-          path: btc_forensic/out/
+          name: btc-forensic-shard-${{ matrix.shard }}
+          path: btc_forensic/out/shard_*/
           retention-days: 7
