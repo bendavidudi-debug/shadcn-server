@@ -1,0 +1,29 @@
+name: BTC Chain Audit
+
+on:
+  push:
+    branches: [btc-chain-audit-20260822]
+    paths:
+      - 'btc_audit/**'
+      - '.github/workflows/btc-chain-audit.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'btc_audit/**'
+      - '.github/workflows/btc-chain-audit.yml'
+  workflow_dispatch:
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Pull fresh Bitcoin chain data
+        run: python3 btc_audit/fetch_chain.py
+      - name: Upload audit outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: btc-chain-audit-output
+          path: btc_audit/out/
+          retention-days: 7
