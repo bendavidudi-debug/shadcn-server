@@ -1,0 +1,29 @@
+name: BTC forensic sharded fresh pull
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'btc_forensic/pull_shard.py'
+      - '.github/workflows/btc-forensic-sharded.yml'
+permissions:
+  contents: read
+jobs:
+  pull:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0,1,2,3,4,5,6,7]
+    env:
+      SHARD_COUNT: 8
+      SHARD_INDEX: ${{ matrix.shard }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fresh blockchain pull shard
+        run: python3 btc_forensic/pull_shard.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: btc-forensic-shard-${{ matrix.shard }}
+          path: btc_forensic/out/shard_*/
+          retention-days: 7
