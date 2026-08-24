@@ -1,0 +1,23 @@
+name: Direct Chainabuse check - Wave3 remaining 38
+
+on:
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install requests
+      - name: Direct fresh Chainabuse pull
+        run: python btc_forensic/chainabuse_wave3_38_direct.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chainabuse-wave3-38-direct
+          path: btc_forensic/chainabuse_wave3_38_out/
